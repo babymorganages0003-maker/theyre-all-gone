@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>They’re All Gone</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Major+Mono+Display&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#ebe4d2; --panel:#f6f1e4; --ink:#1f1b2c; --muted:#6c6478; --line:#d3c9b1;
+  --ghost:#1f8a7f; --ember:#b4502a; --gold:#a8771c; --btn:#e2d9c3; --btnInk:#1f1b2c;
+  color-scheme: light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#13111c; --panel:#1b1828; --ink:#ece4d0; --muted:#958da5; --line:#2d2941;
+    --ghost:#7fd6c8; --ember:#ec8a52; --gold:#f0c76a; --btn:#24203a; --btnInk:#ece4d0;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#13111c; --panel:#1b1828; --ink:#ece4d0; --muted:#958da5; --line:#2d2941;
+  --ghost:#7fd6c8; --ember:#ec8a52; --gold:#f0c76a; --btn:#24203a; --btnInk:#ece4d0;
+  color-scheme: dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{margin:0}
+body{height:100%;background:var(--bg);color:var(--ink);
+  font-family:'Chakra Petch',ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;
+  -webkit-user-select:none;user-select:none;overflow:hidden;touch-action:manipulation}
+#app{height:100%;max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:6px;padding:8px 10px}
+header{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+h1{font-family:'Major Mono Display','Courier New',monospace;font-weight:400;font-size:clamp(17px,5vw,24px);margin:0;letter-spacing:-.02em;line-height:1}
+.loop{font-weight:700;font-size:15px;color:var(--ghost);white-space:nowrap}
+.loop b{font-size:22px;font-variant-numeric:tabular-nums}
+.stats{display:flex;align-items:center;gap:10px;font-size:13px;font-variant-numeric:tabular-nums;flex-wrap:wrap}
+.stats span{white-space:nowrap}
+.bar{flex:1;min-width:70px;height:8px;background:var(--line);border-radius:4px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--ghost);transition:width .15s}
+.bar.low i{background:var(--ember)}
+.era{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--muted);gap:8px}
+.era strong{color:var(--ink);font-size:15px}
+#ghost{font-size:13px;line-height:1.35;min-height:4.05em;max-height:4.05em;overflow:hidden;color:var(--ink);
+  border-left:3px solid var(--ghost);padding:1px 0 1px 8px}
+#ghost em{color:var(--ghost);font-style:normal;font-weight:600}
+#stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;position:relative}
+canvas{display:block;border-radius:6px;touch-action:none}
+.pad{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.tools{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+button{font:inherit;color:var(--btnInk);background:var(--btn);border:1px solid var(--line);border-radius:8px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+button:focus-visible{outline:2px solid var(--ghost);outline-offset:2px}
+.pad button{height:50px;font-size:20px}
+.pad button:active,.tools button:active{background:var(--ghost);color:var(--bg)}
+.tools button{height:38px;font-size:13px;font-weight:600}
+button[disabled]{opacity:.38;cursor:default}
+#overlay{position:fixed;inset:0;background:rgba(10,8,16,.72);display:none;align-items:center;justify-content:center;padding:16px;z-index:10}
+#overlay.on{display:flex}
+.card{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:18px;width:100%;max-width:440px;max-height:calc(100% - 20px);overflow:auto}
+.card h2{margin:0 0 8px;font-size:22px;line-height:1.15}
+.card h2.big{font-family:'Major Mono Display','Courier New',monospace;font-weight:400;font-size:30px}
+.card p{margin:0 0 12px;line-height:1.45;font-size:15px;color:var(--ink)}
+.card .sub{color:var(--muted);font-size:13px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row button{flex:1;min-width:120px;height:44px;font-weight:600}
+.node.tear{border-color:rgba(190,150,255,.75)}
+.steer{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}
+.steer button{height:42px;font-size:13px;font-weight:600;text-align:left;padding:0 10px}
+.steer button.pick{border-color:rgba(190,150,255,.9)}
+button.go{background:var(--ghost);color:var(--bg);border-color:var(--ghost)}
+.tree{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
+.br h3{margin:0 0 4px;font-size:13px;color:var(--muted);font-weight:600;text-align:center}
+.node{width:100%;min-height:58px;margin-bottom:6px;padding:6px 4px;font-size:12px;line-height:1.2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.node .c{font-size:11px;color:var(--muted)}
+.node.own{background:var(--ghost);color:var(--bg);border-color:var(--ghost)}
+.node.own .c{color:var(--bg)}
+.node.lock{opacity:.45}
+.node.sel{outline:2px solid var(--gold);outline-offset:1px}
+.asc{width:100%;min-height:50px;margin-bottom:10px;font-weight:700}
+.asc.lock{opacity:.45}
+.asc.own{background:var(--gold);color:#1a1405;border-color:var(--gold)}
+#info{min-height:4.2em;font-size:14px;line-height:1.4;margin-bottom:10px}
+textarea{width:100%;height:46vh;font:12px/1.4 ui-monospace,Menlo,Consolas,monospace;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px;-webkit-user-select:text;user-select:text}
+.err{color:var(--ember);font-size:13px;min-height:1.2em;margin:6px 0}
+@media (prefers-reduced-motion: reduce){.bar i{transition:none}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>they’re all gone</h1>
+    <div class="loop">loop <b id="loopN">1</b></div>
+  </header>
+  <div class="stats">
+    <span title="Bones kept">🦴 <b id="bonesN">0</b>/<span id="bonesT">30</span></span>
+    <span title="Skulls kept">💀 <b id="skullsN">0</b>/<span id="skullsT">10</span></span>
+    <span title="Tokens banked">✦ <b id="bankN">0</b><span id="pendN"></span></span>
+    <div class="bar" id="bar" title="Preservation"><i id="barI"></i></div>
+  </div>
+  <div class="era"><span><strong id="lvName">Primordia</strong><span id="lvEra"></span></span><span id="lvBody"></span></div>
+  <div id="ghost"></div>
+  <div id="stage"><canvas id="cv"></canvas></div>
+  <div class="pad">
+    <button data-d="l" aria-label="Left">◀</button>
+    <button data-d="u" aria-label="Up">▲</button>
+    <button data-d="dn" aria-label="Down">▼</button>
+    <button data-d="r" aria-label="Right">▶</button>
+  </div>
+  <div class="tools">
+    <button id="bWait">Wait</button>
+    <button id="bRew">Rewind</button>
+    <button id="bFrz">Stop</button>
+    <button id="bTree">Tree</button>
+    <button id="bMenu">Menu</button>
+  </div>
+</div>
+<div id="overlay"><div class="card" id="card"></div></div>
+
+<script id="levels" type="application/json">[
+ {
+  "name": "Primordia",
+  "era": "Landing from orbit",
+  "body": "Whole body",
+  "icon": "🧑‍🚀",
+  "crowd": "🦕",
+  "theme": {
+   "floor": "#123a2c",
+   "floor2": "#0f3326",
+   "wall": "#2f6b45",
+   "water": "#1b4f7a",
+   "accent": "#e9c46a"
+  },
+  "lines": [
+   "Down through the cloud. Green land, blue water. I’m the ghost in the wind now, and I’m riding with you.",
+   "Primordia again. You’ve stood on this shore before. So have I.",
+   "We know this shore by heart. Fewer of them every time."
+  ],
+  "god": "Nothing on the shore but the two of us.",
+  "holes": [{"length": 6, "every": 2}],
+  "map": [
+   "###############",
+   "#P....~~~....t#",
+   "#.##..~~~.##..#",
+   "#.#b..~~~..#..#",
+   "#....h.....b..#",
+   "#..t.......##.#",
+   "#~~~..##..v...#",
+   "#~~~..#S.....t#",
+   "#.....##..##..#",
+   "#.h.......#K..#",
+   "#..##.t.......#",
+   "#..#.....b....#",
+   "#..#..h....##.#",
+   "#.t.........#E#",
+   "###############"
+  ]
+ },
+ {
+  "name": "Coal trade",
+  "era": "The 1800s",
+  "body": "Flesh and bone",
+  "icon": "🧔",
+  "crowd": "👷",
+  "theme": {
+   "floor": "#2a2622",
+   "floor2": "#25211d",
+   "wall": "#5b4e42",
+   "water": "#2c3e50",
+   "accent": "#f0b35a"
+  },
+  "lines": [
+   "Coal smoke and rail yards. Keep me close. Nobody here can hear me but you.",
+   "The yards are quieter this time.",
+   "Half the shifts never showed up."
+  ],
+  "god": "The furnaces are cold. No one came to feed them.",
+  "holes": [{"length": 8}],
+  "map": [
+   "###############",
+   "#P..#....t#...#",
+   "#.#.#.##..#.b.#",
+   "#.#...#...#...#",
+   "#.###.#.h.###.#",
+   "#t....#.......#",
+   "###.###.##.####",
+   "#...#b....v...#",
+   "#.#.#.###.#.#.#",
+   "#.#...#.S.#.#K#",
+   "#.###.#...#.#.#",
+   "#..h..#.###.#.#",
+   "#.#.t.....b.#t#",
+   "#E#.....#.....#",
+   "###############"
+  ]
+ },
+ {
+  "name": "Rejuvenation",
+  "era": "The clinic",
+  "body": "Younger flesh",
+  "icon": "🧒",
+  "crowd": "🧑‍⚕️",
+  "theme": {
+   "floor": "#163338",
+   "floor2": "#132d31",
+   "wall": "#2f8a85",
+   "water": "#1d5d8c",
+   "accent": "#f4d35e"
+  },
+  "lines": [
+   "The clinic takes years off you. Don’t let it take anything else.",
+   "Younger again. It gets easier to lose things.",
+   "Same clinic. Emptier halls."
+  ],
+  "god": "The beds are made. Nobody’s in them.",
+  "holes": [{"length": 8, "mode": "loop"}],
+  "map": [
+   "###############",
+   "#P....#..h..t.#",
+   "#.###.#.###.#.#",
+   "#.#b..h...#.#.#",
+   "#.#.###.#.#...#",
+   "#...#t..#.###.#",
+   "###.#.###...#.#",
+   "#t..#...v.#.#.#",
+   "#.###.#.#.#.#.#",
+   "#.....#.#...#K#",
+   "#.#####.#####.#",
+   "#...b...~~~...#",
+   "#.#####.~S~#..#",
+   "#..t....###b.E#",
+   "###############"
+  ]
+ },
+ {
+  "name": "Sleepers",
+  "era": "Underground, asleep",
+  "body": "Bones",
+  "icon": "🦴",
+  "crowd": "😴",
+  "theme": {
+   "floor": "#1c2233",
+   "floor2": "#181d2c",
+   "wall": "#47506b",
+   "water": "#22507e",
+   "accent": "#e6c069"
+  },
+  "lines": [
+   "They’re asleep down here, thousands of them. Some walk in their sleep. Don’t let them walk into you.",
+   "Some of the beds are empty now.",
+   "Most of them stopped dreaming."
+  ],
+  "god": "Every bed is empty.",
+  "holes": [{"length": 10, "fromLoop": 2}],
+  "map": [
+   "###############",
+   "#P.....#.....b#",
+   "#.#.#.##.#.#..#",
+   "#...w...w...#.#",
+   "#.#.#.#.#.#.#.#",
+   "#t..........#t#",
+   "#####.###.#####",
+   "#~~~#.....#..K#",
+   "#~S~#.#w#.#.#.#",
+   "#~~~..#.#...#.#",
+   "#.###.#.#.###.#",
+   "#b..........w.#",
+   "#.#.#.#t#.#.#.#",
+   "#..t..#E#..b..#",
+   "###############"
+  ]
+ },
+ {
+  "name": "Surface run",
+  "era": "The 2020s",
+  "body": "Bones, behind the wheel",
+  "icon": "🚗",
+  "crowd": "🚶",
+  "theme": {
+   "floor": "#24272e",
+   "floor2": "#202329",
+   "wall": "#4d5361",
+   "water": "#1f4f80",
+   "accent": "#ffd166"
+  },
+  "lines": [
+   "Traffic. Keep the car moving and find the key to the underpass.",
+   "Lighter traffic tonight.",
+   "The streets are thinning out."
+  ],
+  "god": "No cars. No lights changing for anyone.",
+  "holes": [{"length": 10, "speed": 2}],
+  "map": [
+   "###############",
+   "#P...h........#",
+   "#.###.###.###.#",
+   "#.#t#.#b#.#.#.#",
+   "#.....v.......#",
+   "#.###.###.###.#",
+   "#.#.#.#K#.#t#.#",
+   "#.....h.......#",
+   "#.###.###.###.#",
+   "#.#b#.#.#.#~#.#",
+   "#........v.~S~#",
+   "#.###.###.#~#.#",
+   "#t#.#.#t#.#.#b#",
+   "#.....h......E#",
+   "###############"
+  ]
+ },
+ {
+  "name": "Bunkers",
+  "era": "Beneath the city",
+  "body": "Head",
+  "icon": "💀",
+  "crowd": "💂",
+  "theme": {
+   "floor": "#2c2924",
+   "floor2": "#27241f",
+   "wall": "#6e665a",
+   "water": "#24476b",
+   "accent": "#f2b84b"
+  },
+  "lines": [
+   "Blast doors and concrete. You’re down to your head now. I’ll do the remembering.",
+   "The guards rotate less often.",
+   "Whole wings are dark."
+  ],
+  "god": "The doors are open. There’s nobody left to close them.",
+  "holes": [{"length": 6}, {"length": 6}],
+  "map": [
+   "###############",
+   "#P#..w..#....t#",
+   "#.#.###.#.###.#",
+   "#.#.#b#...#.#.#",
+   "#...#.#.#.#.#.#",
+   "###.#.###.#...#",
+   "#t..#..x..#.###",
+   "#.###.###.#...#",
+   "#.....#K#.###.#",
+   "#####.#.#..b..#",
+   "#b....#.#.#####",
+   "#.###.#.#.#t..#",
+   "#.#t....h.#.###",
+   "#.#####E....GS#",
+   "###############"
+  ]
+ },
+ {
+  "name": "Torpor",
+  "era": "The pools",
+  "body": "Nerves",
+  "icon": "🧠",
+  "crowd": "🦠",
+  "theme": {
+   "floor": "#1d1a45",
+   "floor2": "#19163d",
+   "wall": "#4b45a8",
+   "water": "#2a63a8",
+   "accent": "#f6d55c"
+  },
+  "lines": [
+   "Nerves in warm water. Stay out of the deep pools until you can swim.",
+   "The pools are stiller this loop.",
+   "Hardly anything stirs in the water."
+  ],
+  "god": "Still water. Nothing in it.",
+  "holes": [{"length": 12, "every": 2}],
+  "map": [
+   "###############",
+   "#P..~~~..~~~.t#",
+   "#.#.~~~.#~~~#.#",
+   "#.#..t..#.....#",
+   "#.###~~~#.~~~.#",
+   "#b....~~...~~.#",
+   "#~~.#.....#..b#",
+   "#~~.#.w.w.#.###",
+   "#...#.....#..K#",
+   "#.###~~.~~###.#",
+   "#t....~.~..x..#",
+   "#.#.#.....#.#.#",
+   "#.#.#GGG#.#.#t#",
+   "#E....GSG..b..#",
+   "###############"
+  ]
+ },
+ {
+  "name": "Future city",
+  "era": "Hover lanes",
+  "body": "Brain in a jar",
+  "icon": "🫙",
+  "crowd": "🤖",
+  "theme": {
+   "floor": "#24133f",
+   "floor2": "#1f1037",
+   "wall": "#6a3fc4",
+   "water": "#2a5aa0",
+   "accent": "#ffcf5a"
+  },
+  "lines": [
+   "Machines and hover lanes. Some of them are hunting you. They move every other turn.",
+   "Fewer patrols in the lanes.",
+   "The city’s mostly running itself now."
+  ],
+  "god": "The city hums for no one.",
+  "holes": [{"length": 8}, {"length": 8, "speed": 2}],
+  "map": [
+   "###############",
+   "#P....#.....t.#",
+   "#.##.##.###.#.#",
+   "#.#...x...#.#.#",
+   "#.#.#####.#...#",
+   "#...#b..#.#.###",
+   "###.#.#.#.#...#",
+   "#t..#.#K#.###.#",
+   "#.###.#.#.....#",
+   "#.....#.###.#.#",
+   "#.###...#b#.#.#",
+   "#.#t#.#...#.#t#",
+   "#.#.#.#x#.#.###",
+   "#b..#...#..EGS#",
+   "###############"
+  ]
+ },
+ {
+  "name": "Into the planet",
+  "era": "Deep sleep",
+  "body": "Avatar",
+  "icon": "🤖",
+  "crowd": "👤",
+  "theme": {
+   "floor": "#3a1212",
+   "floor2": "#331010",
+   "wall": "#8a2b23",
+   "water": "#2b4d7a",
+   "accent": "#ffb347"
+  },
+  "lines": [
+   "Your body sleeps in the rock. Walk as the avatar. It doesn’t bleed, but it can break.",
+   "The deep is emptier than before.",
+   "Only a few shapes left in the dark."
+  ],
+  "god": "The planet sleeps alone.",
+  "holes": [{"length": 14}, {"length": 6, "mode": "loop"}],
+  "map": [
+   "###############",
+   "#E..t.#.....b.#",
+   "#.###.#.###.#.#",
+   "#.#t..#...#.#.#",
+   "#.#.#####.#.#.#",
+   "#...#..x..#...#",
+   "###.#.###.#.###",
+   "#t....#S#.....#",
+   "#.###.#G#.###.#",
+   "#.#b..#.#..t#.#",
+   "#.#.###.###.#.#",
+   "#.#...w.....#K#",
+   "#.###.#.###.#.#",
+   "#...b.#..x...P#",
+   "###############"
+  ]
+ },
+ {
+  "name": "Galactagon",
+  "era": "Deep time",
+  "body": "Mind",
+  "icon": "🌀",
+  "crowd": "👁️",
+  "theme": {
+   "floor": "#0c1024",
+   "floor2": "#0a0d1e",
+   "wall": "#3a6fb0",
+   "water": "#24477a",
+   "accent": "#ffe08a"
+  },
+  "lines": [
+   "Deep time. Portals, and whatever watches them. Take the key and step through, and it all starts again.",
+   "The watchers are fewer.",
+   "Almost nobody left to watch."
+  ],
+  "god": "They’re all gone. Walk on.",
+  "holes": [{"length": 8}, {"length": 8, "speed": 2}, {"length": 6, "mode": "loop", "fromLoop": 2}],
+  "map": [
+   "###############",
+   "#......x.....E#",
+   "#.###.###.###.#",
+   "#.#t#..b..#t#.#",
+   "#.#.#.###.#.#.#",
+   "#.....#S#.....#",
+   "###.#.#G#.#.###",
+   "#b..#.....#..K#",
+   "#.###.#.#.###.#",
+   "#..x..#.#..x..#",
+   "#.#.###.###.#.#",
+   "#.#t.........b#",
+   "#.#.###.###.#.#",
+   "#P....t.......#",
+   "###############"
+  ]
+ }
+]</script>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const DEFAULT_LEVELS=JSON.parse($('levels').textContent);
+const SAVE='tag-save-v1', LVKEY='tag-levels-v1';
+function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
+function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+function lsDel(k){try{localStorage.removeItem(k)}catch(e){}}
+
+let LEVELS=DEFAULT_LEVELS;
+try{const c=lsGet(LVKEY);if(c){const p=JSON.parse(c);if(Array.isArray(p)&&p.length)LEVELS=p}}catch(e){}
+
+/* ---------- tech tree ---------- */
+const TREE=[
+ {id:'whisper',br:'ghost',tier:1,cost:6,sk:0,name:'Whisper',desc:'The ghost marks a path to the key, then to the portal.'},
+ {id:'sight',br:'ghost',tier:2,cost:10,sk:2,name:'Foresight',desc:'See where every person will step next.'},
+ {id:'phase',br:'ghost',tier:3,cost:14,sk:5,name:'Phase',desc:'Walk through ghost gates. Five skulls wait behind them.'},
+ {id:'marrow',br:'body',tier:1,cost:6,sk:0,name:'Marrow',desc:'+25 maximum preservation.'},
+ {id:'swim',br:'body',tier:2,cost:10,sk:2,name:'Swim',desc:'Cross water and pools. Three skulls wait across them.'},
+ {id:'iron',br:'body',tier:3,cost:14,sk:5,name:'Iron frame',desc:'Collisions do half damage.'},
+ {id:'rewind',br:'loop',tier:1,cost:6,sk:0,name:'Rewind',desc:'Once per era, undo your last six moves.'},
+ {id:'freeze',br:'loop',tier:2,cost:10,sk:2,name:'Stop time',desc:'Once per era, everyone and every tear stands still for six turns.'},
+ {id:'dominion',br:'loop',tier:3,cost:14,sk:5,name:'Dominion',desc:'People can’t hurt you. You walk straight through them.'},
+ {id:'tearsight',br:'ghost',tier:4,req:'whisper',extra:true,cost:8,sk:0,name:'Tear sight',desc:'Each tear shows the era it leads to and its next two squares. The ghost warns you a turn before one lands on you.'},
+ {id:'anchor',br:'body',tier:4,req:'marrow',extra:true,cost:8,sk:0,name:'Anchor',desc:'A tear that moves onto you passes through. Only stepping into one yourself takes you.'},
+ {id:'steer',br:'loop',tier:4,req:'rewind',extra:true,cost:12,sk:2,name:'Steer',desc:'When a tear takes you, you choose which era you come out in.'}
+];
+const ASCEND={id:'ascend',name:'Ascend',cost:20,desc:'Needs the first three tiers of every branch, and every skull. Next loop, walls stop mattering and nobody is left. Walk the whole thing, start to end.'};
+const BR={ghost:'AI ghost',body:'Body',loop:'Loop'};
+
+/* ---------- persistent state ---------- */
+function fresh(){return{loop:1,lvl:0,bank:0,bones:[],skulls:[],owned:[],ascended:false,god:false,steps:0,hits:0}}
+let S=fresh();
+try{const s=JSON.parse(lsGet(SAVE)||'null');if(s&&typeof s.loop==='number')S=Object.assign(fresh(),s)}catch(e){}
+if(S.lvl>=LEVELS.length)S.lvl=0;
+function save(){lsSet(SAVE,JSON.stringify(S))}
+const has=id=>S.owned.includes(id);
+
+/* ---------- audio ---------- */
+let AC=null,sound=true;
+function tone(f1,f2,dur,type,vol){
+  if(!sound)return;
+  try{
+    AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+    if(AC.state==='suspended')AC.resume();
+    const t=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();
+    o.type=type||'sine';o.frequency.setValueAtTime(f1,t);
+    if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+dur);
+    g.gain.setValueAtTime(vol||.08,t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+    o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+dur+.02);
+  }catch(e){}
+}
+const sfx={
+  step:()=>tone(150,90,.05,'triangle',.05),
+  bump:()=>tone(90,70,.06,'square',.03),
+  token:()=>tone(660,1320,.18,'sine',.08),
+  bone:()=>tone(330,520,.22,'triangle',.1),
+  skull:()=>{tone(220,880,.5,'sine',.12);setTimeout(()=>tone(330,1320,.4,'sine',.08),120)},
+  key:()=>tone(440,1760,.35,'square',.06),
+  hit:()=>tone(140,45,.22,'sawtooth',.14),
+  portal:()=>tone(200,900,.6,'sine',.12),
+  power:()=>tone(300,1200,.4,'triangle',.1)
+};
+
+/* ---------- random number generator ---------- */
+let seed=(Date.now()^0x9e3779b9)>>>0;
+function rnd(){seed=(seed+0x6D2B79F5)|0;let x=Math.imul(seed^(seed>>>15),1|seed);x=(x+Math.imul(x^(x>>>7),61|x))^x;return((x^(x>>>14))>>>0)/4294967296}
+const pick=a=>a[Math.floor(rnd()*a.length)];
+
+/* ---------- run state ---------- */
+let R=null;
+const cv=$('cv'),ctx=cv.getContext('2d');
+let busy=false,pulse=0;
+
+function totalBones(){let n=0;LEVELS.forEach(l=>l.map.forEach(r=>{for(const c of r)if(c==='b')n++}));return n}
+function totalSkulls(){let n=0;LEVELS.forEach(l=>l.map.forEach(r=>{for(const c of r)if(c==='S')n++}));return n}
+function maxHP(){return 100+S.bones.length*2+(has('marrow')?25:0)}
+
+function loadLevel(){
+  const i=S.lvl, lv=LEVELS[i];
+  const grid=lv.map.map(r=>r.split(''));
+  const h=grid.length,w=Math.max(...grid.map(r=>r.length));
+  grid.forEach(r=>{while(r.length<w)r.push('#')});
+  const run={i,lv,grid,w,h,p:{x:1,y:1},exit:null,keyPos:null,key:false,items:[],picked:[],pending:0,crowds:[],echoes:[],
+    hp:0,freeze:0,freezeUsed:false,rewindUsed:false,hist:[],flash:0};
+  const spawns=[];
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    const c=grid[y][x];
+    if(c==='P'){run.p={x,y};grid[y][x]='.'}
+    else if(c==='E'){run.exit={x,y};grid[y][x]='.'}
+    else if(c==='K'){run.keyPos={x,y};grid[y][x]='.'}
+    else if(c==='t'||c==='b'||c==='S'){run.items.push({t:c,x,y,id:c==='S'?('s'+i):(c+i+'-'+x+'-'+y)});grid[y][x]='.'}
+    else if('hvwx'.includes(c)){spawns.push({type:c,x,y});grid[y][x]='.'}
+  }
+  if(!run.exit)run.exit={x:w-2,y:h-2};
+  if(!run.keyPos)run.keyPos={...run.exit};
+  // fewer people every loop; none for the god run
+  const frac=S.god?0:Math.max(.25,1-.2*(S.loop-1));
+  const keep=Math.ceil(spawns.length*frac);
+  const order=spawns.map((s,k)=>({s,k,r:(k*37+i*11+7)%97})).sort((a,b)=>a.r-b.r);
+  order.forEach((o,n)=>{
+    if(n<keep)run.crowds.push({type:o.s.type,x:o.s.x,y:o.s.y,d:(o.k%2?-1:1),tick:o.k%2,next:null});
+    else run.echoes.push({x:o.s.x,y:o.s.y});
+  });
+  if(S.god)run.key=true;
+  // tiles he can reach on foot from the map's start
+  const free=(x,y)=>{const c=grid[y][x];return c!=='#'&&c!=='~'&&c!=='G'};
+  const seen=new Set([run.p.x+','+run.p.y]),q=[run.p];
+  while(q.length){const c=q.shift();for(const [dx,dy] of DIRS){const nx=c.x+dx,ny=c.y+dy,k=nx+','+ny;
+    if(nx>0&&ny>0&&nx<w-1&&ny<h-1&&!seen.has(k)&&free(nx,ny)){seen.add(k);q.push({x:nx,y:ny})}}}
+  const open=[...seen].map(s=>{const [x,y]=s.split(',').map(Number);return{x,y}});
+  const md=(a,b)=>Math.abs(a.x-b.x)+Math.abs(a.y-b.y);
+  const busyAt=(x,y)=>run.items.some(i=>i.x===x&&i.y===y)||(run.keyPos.x===x&&run.keyPos.y===y)||(run.exit.x===x&&run.exit.y===y)||run.crowds.some(c=>md(c,{x,y})<3);
+  // random start position
+  const starts=open.filter(o=>!busyAt(o.x,o.y)&&md(o,run.exit)>=6);
+  if(starts.length&&!S.fixedStart)run.p={...pick(starts)};
+  // time holes: each one runs a track of positions t1, t2, t3 ...
+  run.holes=[];run.turn=0;
+  const specs=lv.holes||(lv.hole?[lv.hole]:[{length:8}]);
+  if(!S.god&&LEVELS.length>1){
+    // tracks never cover the portal or the key, so a tear can't steal the key off the floor
+    const notExit=o=>!(run.exit.x===o.x&&run.exit.y===o.y)&&!(run.keyPos.x===o.x&&run.keyPos.y===o.y);
+    // on the first loop, tears only reach eras within three of this one
+    const others=LEVELS.map((_,k)=>k).filter(k=>k!==i),near=S.loop===1?others.filter(k=>Math.abs(k-i)<=3):others;
+    specs.forEach(sp=>{
+      if(!sp||sp.off||(sp.fromLoop&&S.loop<sp.fromLoop))return;
+      const len=Math.max(2,sp.length||8);
+      const used=run.holes.flatMap(H=>H.path);
+      const taken=o=>used.some(u=>u.x===o.x&&u.y===o.y);
+      const hs=open.filter(o=>md(o,run.p)>=5&&notExit(o)&&!taken(o));
+      if(!hs.length)return;
+      const path=[{...pick(hs)}];
+      for(let k=1;k<len;k++){
+        const c=path[path.length-1];
+        const nb=DIRS.map(([dx,dy])=>({x:c.x+dx,y:c.y+dy})).filter(n=>seen.has(n.x+','+n.y)&&notExit(n)&&md(n,run.p)>=3&&!taken(n));
+        const fr=nb.filter(n=>!path.some(p=>p.x===n.x&&p.y===n.y));
+        if(!fr.length)break;
+        path.push(pick(fr));
+      }
+      if(path.length<2)return;
+      run.holes.push({path,i:0,dir:1,speed:Math.max(1,sp.speed||1),every:Math.max(1,sp.every||1),mode:sp.mode==='loop'?'loop':'bounce',dest:pick(near.length?near:others)});
+    });
+  }
+  R=run;
+  R.hp=maxHP();
+  R.crowds.forEach(plan);
+  busy=false;
+  const ln=lv.lines||[];
+  say(S.god?(lv.god||''):(ln[Math.min(S.loop-1,ln.length-1)]||''));
+  if(!S.god&&!S.tearTip&&R.holes.length){S.tearTip=true;say('See the ring marked t1? That’s a loop tear. It walks its track one step a turn. Step into it and you’re in another era.')}
+  save();ui();fit();
+}
+
+/* ---------- rules ---------- */
+function inside(x,y){return x>0&&y>0&&x<R.w-1&&y<R.h-1}
+function canWalk(x,y){
+  if(!inside(x,y))return false;
+  const c=R.grid[y][x];
+  if(S.god)return true;
+  if(c==='#')return false;
+  if(c==='~')return has('swim');
+  if(c==='G')return has('phase');
+  return true;
+}
+function crowdOK(x,y,self){
+  if(!inside(x,y))return false;
+  const c=R.grid[y][x];
+  if(c==='#'||c==='~'||c==='G')return false;
+  if(R.exit.x===x&&R.exit.y===y)return false;
+  return !R.crowds.some(o=>o!==self&&o.x===x&&o.y===y);
+}
+function crowdAt(x,y){return R.crowds.find(c=>c.x===x&&c.y===y)}
+const DIRS=[[1,0],[-1,0],[0,1],[0,-1]];
+function plan(c){
+  c.nd=c.d;c.next=null;
+  if(c.type==='h'||c.type==='v'){
+    const ax=c.type==='h';
+    let d=c.d,nx=c.x+(ax?d:0),ny=c.y+(ax?0:d);
+    if(!crowdOK(nx,ny,c)){d=-d;nx=c.x+(ax?d:0);ny=c.y+(ax?0:d);}
+    if(crowdOK(nx,ny,c)){c.next={x:nx,y:ny};c.nd=d}
+  }else if(c.type==='w'){
+    if(Math.random()<.45)return;
+    const opts=DIRS.map(([dx,dy])=>({x:c.x+dx,y:c.y+dy})).filter(p=>crowdOK(p.x,p.y,c));
+    if(opts.length)c.next=opts[Math.floor(Math.random()*opts.length)];
+  }else if(c.type==='x'){
+    if(c.tick%2)return;
+    let best=null,bd=1e9;
+    DIRS.slice().sort(()=>Math.random()-.5).forEach(([dx,dy])=>{
+      const nx=c.x+dx,ny=c.y+dy;
+      const isP=nx===R.p.x&&ny===R.p.y;
+      if(!isP&&!crowdOK(nx,ny,c))return;
+      const dd=Math.abs(nx-R.p.x)+Math.abs(ny-R.p.y);
+      if(dd<bd){bd=dd;best={x:nx,y:ny}}
+    });
+    const cur=Math.abs(c.x-R.p.x)+Math.abs(c.y-R.p.y);
+    if(best&&bd<cur)c.next=best;
+  }
+}
+function moveCrowds(){
+  R.crowds.forEach(c=>{
+    const n=c.next;c.tick++;
+    if(!n)return;
+    if(n.x===R.p.x&&n.y===R.p.y){if(!has('dominion')&&c!==R.bumped)hit(c);c.d=-c.nd;return}
+    if(R.crowds.some(o=>o!==c&&o.x===n.x&&o.y===n.y))return;
+    c.x=n.x;c.y=n.y;c.d=c.nd;
+  });
+  R.crowds.forEach(plan);
+}
+function hit(c){
+  const dmg=has('iron')?7:15;
+  R.hp-=dmg;R.flash=1;S.hits++;sfx.hit();
+  say('You ran into '+(c.type==='x'?'a hunter':'the crowd')+'. Preservation −'+dmg+'.');
+  if(navigator.vibrate)try{navigator.vibrate(40)}catch(e){}
+}
+function snapshot(){
+  R.hist.push(JSON.stringify({p:R.p,key:R.key,picked:R.picked,pending:R.pending,hp:R.hp,freeze:R.freeze,holes:R.holes.map(H=>({i:H.i,dir:H.dir})),turn:R.turn,
+    crowds:R.crowds.map(c=>({x:c.x,y:c.y,d:c.d,tick:c.tick,type:c.type}))}));
+  if(R.hist.length>40)R.hist.shift();
+}
+
+function step(dx,dy){
+  if(busy||!R)return;
+  const moving=dx||dy;
+  let nx=R.p.x+dx,ny=R.p.y+dy;
+  if(moving&&!canWalk(nx,ny)){
+    sfx.bump();
+    const c=R.grid[ny]&&R.grid[ny][nx];
+    if(c==='~')say('Deep water. The body can’t cross it yet.');
+    else if(c==='G')say('A ghost gate. Only something without a body walks through.');
+    return;
+  }
+  snapshot();
+  S.steps++;
+  if(moving){
+    const c=crowdAt(nx,ny);
+    R.bumped=null;
+    if(c&&!has('dominion')){hit(c);R.bumped=c;nx=R.p.x;ny=R.p.y}
+    else if(c){c.x=R.p.x;c.y=R.p.y}
+    if(nx!==R.p.x||ny!==R.p.y){R.p={x:nx,y:ny};sfx.step()}
+  }
+  // pickups
+  for(const it of R.items){
+    if(it.x!==R.p.x||it.y!==R.p.y)continue;
+    if(it.t==='t'&&!R.picked.includes(it.id)){R.picked.push(it.id);R.pending++;R.hp=Math.min(maxHP(),R.hp+4);sfx.token()}
+    else if(it.t==='b'&&!S.bones.includes(it.id)){S.bones.push(it.id);R.hp=Math.min(maxHP(),R.hp+6);sfx.bone();
+      say('A bone, kept. '+S.bones.length+' of '+totalBones()+'. Each one keeps more of you.')}
+    else if(it.t==='S'&&!S.skulls.includes(it.id)){S.skulls.push(it.id);sfx.skull();
+      say('A skull. Yours, from a loop you don’t remember. '+S.skulls.length+' of '+totalSkulls()+'.')}
+  }
+  if(!R.key&&R.p.x===R.keyPos.x&&R.p.y===R.keyPos.y){R.key=true;sfx.key();say('Key taken. The portal’s open.')}
+  if(!S.god)R.hp-=.5;
+  if(R.p.x===R.exit.x&&R.p.y===R.exit.y){
+    if(R.key){ui();complete();return}
+    say('The portal’s locked. Find the key first.');
+  }
+  if(moving&&touchHole())return;
+  const frozen=R.freeze>0;
+  if(frozen){R.freeze--;R.crowds.forEach(plan)}
+  else moveCrowds();
+  R.turn++;
+  if(!frozen)for(const H of R.holes){
+    if(R.turn%H.every)continue;
+    for(let s=0;s<H.speed;s++){advanceHole(H);if(!has('anchor')&&touchHole())return}
+  }
+  tearWarn();
+  if(R.hp<=0){R.hp=0;ui();die();return}
+  ui();
+}
+
+/* ---------- time hole ---------- */
+function advanceHole(H){
+  if(H.mode==='loop'){H.i=(H.i+1)%H.path.length;return}
+  if(H.i+H.dir<0||H.i+H.dir>=H.path.length)H.dir=-H.dir;
+  H.i+=H.dir;
+}
+function nextSquares(H,n){
+  const c={i:H.i,dir:H.dir,mode:H.mode,path:H.path},out=[];
+  for(let k=0;k<n;k++){advanceHole(c);out.push(c.path[c.i])}
+  return out;
+}
+const TEARCOL=['violet','pink','blue'];
+function tearWarn(){
+  if(!has('tearsight')||R.freeze>0)return;
+  R.holes.forEach((H,n)=>{
+    if((R.turn+1)%H.every)return;
+    if(nextSquares(H,H.speed).some(q=>q.x===R.p.x&&q.y===R.p.y))
+      say('The '+TEARCOL[n%3]+' tear lands on you next turn. It leads to '+LEVELS[H.dest].name+'.'+(has('anchor')?' Anchor will hold you.':''));
+  });
+}
+function touchHole(){
+  if(!R||busy)return false;
+  const k=R.holes.findIndex(H=>{const h=H.path[H.i];return h.x===R.p.x&&h.y===R.p.y});
+  if(k<0)return false;
+  ui();
+  document.dispatchEvent(new CustomEvent('timehole',{detail:{from:S.lvl,t:R.holes[k].i+1,hole:k,dest:R.holes[k].dest}}));
+  return true;
+}
+document.addEventListener('timehole',e=>{
+  const {from,t,dest}=e.detail;
+  const choices=LEVELS.map((_,k)=>k).filter(k=>k!==from);
+  if(!choices.length)return;
+  const planned=(typeof dest==='number'&&dest!==from&&LEVELS[dest])?dest:pick(choices);
+  busy=true;sfx.portal();setTimeout(()=>tone(900,120,.7,'sine',.1),150);
+  if(has('steer')){
+    show(`<h2>Loop tear at t${t}</h2>
+      <p>You can steer it. It was headed for ${esc(LEVELS[planned].name)}. Pick where you come out.</p>
+      <div class="steer">${choices.map(k=>`<button data-to="${k}" class="${k===planned?'pick':''}">${k+1}. ${esc(LEVELS[k].name)}</button>`).join('')}</div>`);
+    $('card').querySelectorAll('[data-to]').forEach(b=>b.onclick=()=>arrive(from,+b.dataset.to,t));
+    return;
+  }
+  arrive(from,planned,t);
+});
+function arrive(from,to,t){
+  const carried=R.pending;
+  S.bank+=carried;S.warps=(S.warps||0)+1;
+  const a=LEVELS[from],b=LEVELS[to];
+  S.lvl=to;save();
+  show(`<h2>Loop tear at t${t}</h2>
+    <p>It caught you at t${t}. ${esc(a.name)} is gone. You come out in ${esc(b.name)}, ${esc(b.era.toLowerCase())}, as ${esc(b.body.toLowerCase())}.</p>
+    <p class="sub">${carried?'+'+carried+' tokens came through with you. ':''}Bones and skulls stay kept.</p>
+    <div class="row"><button id="oTree">Open tree</button><button class="go" id="oGo">Come out the other side</button></div>`);
+  $('oTree').onclick=()=>openTree(true);
+  $('oGo').onclick=()=>{hide();loadLevel()};
+}
+
+function doRewind(){
+  if(busy||!has('rewind')||R.rewindUsed||!R.hist.length)return;
+  const n=Math.min(6,R.hist.length);
+  let snap;for(let k=0;k<n;k++)snap=R.hist.pop();
+  const s=JSON.parse(snap);
+  R.p=s.p;R.key=s.key;R.picked=s.picked;R.pending=s.pending;R.hp=s.hp;R.freeze=s.freeze;
+  R.crowds=s.crowds.map(c=>({...c,next:null}));(s.holes||[]).forEach((h,k)=>{if(R.holes[k]){R.holes[k].i=h.i;R.holes[k].dir=h.dir}});R.turn=s.turn||0;R.crowds.forEach(plan);
+  R.rewindUsed=true;sfx.power();say('Rewound '+n+' moves. That’s the only one this era.');ui();
+}
+function doFreeze(){
+  if(busy||!has('freeze')||R.freezeUsed)return;
+  R.freeze=6;R.freezeUsed=true;sfx.power();say('Time stops for everyone but you. Six turns.');ui();
+}
+
+/* ---------- flow ---------- */
+function show(html){$('card').innerHTML=html;$('overlay').classList.add('on');busy=true}
+function hide(){$('overlay').classList.remove('on');busy=false}
+function complete(){
+  busy=true;sfx.portal();
+  S.bank+=R.pending;
+  const last=S.lvl>=LEVELS.length-1;
+  if(last&&S.god){save();return ending()}
+  if(last){
+    S.loop++;S.lvl=0;S.god=S.ascended;save();
+    const kept=Math.round(Math.max(.25,1-.2*(S.loop-1))*100);
+    show(`<h2>Loop ${S.loop}</h2>
+      <p>Back to Primordia. You keep every bone, every skull, every token, and everything on the tree.</p>
+      <p class="sub">${S.god?'This time nobody will be there.':'Only '+kept+'% of the people come back this time.'}</p>
+      <div class="row"><button id="oTree">Open tree</button><button class="go" id="oGo">Begin loop ${S.loop}</button></div>`);
+    $('oTree').onclick=()=>openTree(true);
+    $('oGo').onclick=()=>{hide();loadLevel()};
+    return;
+  }
+  const done=LEVELS[S.lvl].name;
+  S.lvl++;save();
+  const nx=LEVELS[S.lvl];
+  show(`<h2>${esc(done)} cleared</h2>
+    <p>+${R.pending} tokens banked. Next is ${esc(nx.name)}, ${esc(nx.era.toLowerCase())}. You arrive as: ${esc(nx.body.toLowerCase())}.</p>
+    <div class="row"><button id="oTree">Open tree</button><button class="go" id="oGo">Step through</button></div>`);
+  $('oTree').onclick=()=>openTree(true);
+  $('oGo').onclick=()=>{hide();loadLevel()};
+}
+function die(){
+  sfx.hit();
+  show(`<h2>He came apart</h2>
+    <p>The ghost pulls you back to the start of ${esc(R.lv.name)}. Tokens from this attempt are lost. Bones and skulls stay kept.</p>
+    <div class="row"><button class="go" id="oGo">Try again</button></div>`);
+  $('oGo').onclick=()=>{hide();loadLevel()};
+}
+function ending(){
+  show(`<h2 class="big">they’re all gone</h2>
+    <p>Loop ${S.loop}. He walked from Primordia to the end of deep time without stopping once. Nothing stood in the way, because nobody was left to.</p>
+    <p class="sub">${S.steps} steps across every loop. ${S.hits} collisions. ${S.warps||0} trips through loop tears. ${S.bones.length} bones kept.</p>
+    <div class="row"><button id="oAgain">Start over</button><button class="go" id="oWalk">Walk it again</button></div>`);
+  $('oAgain').onclick=()=>{S=fresh();save();hide();loadLevel()};
+  $('oWalk').onclick=()=>{S.loop++;S.lvl=0;save();hide();loadLevel()};
+}
+
+/* ---------- tree ---------- */
+let sel=null;
+function nodeState(n){
+  if(has(n.id))return 'own';
+  const prev=prevOf(n);
+  if(prev&&!has(prev.id))return 'lock';
+  if(S.skulls.length<n.sk)return 'lock';
+  return S.bank>=n.cost?'buy':'poor';
+}
+function prevOf(n){return n.req?TREE.find(t=>t.id===n.req):TREE.find(t=>t.br===n.br&&t.tier===n.tier-1)}
+function ascendState(){
+  if(S.ascended)return 'own';
+  if(TREE.some(t=>!t.extra&&!has(t.id))||S.skulls.length<totalSkulls())return 'lock';
+  return S.bank>=ASCEND.cost?'buy':'poor';
+}
+function openTree(fromCard){
+  const wasBusy=busy;
+  const back=fromCard?$('card').innerHTML:null;
+  const render=()=>{
+    let h=`<h2>How he does it</h2><p class="sub">${S.bank} tokens, ${S.skulls.length} skulls. Each branch unlocks in order. Deeper tiers need skulls.</p><div class="tree">`;
+    ['ghost','body','loop'].forEach(b=>{
+      h+=`<div class="br"><h3>${BR[b]}</h3>`;
+      TREE.filter(t=>t.br===b).forEach(t=>{
+        const st=nodeState(t);
+        h+=`<button class="node ${t.extra?'tear':''} ${st==='own'?'own':st==='lock'?'lock':''} ${sel===t.id?'sel':''}" data-n="${t.id}">${esc(t.name)}<span class="c">${st==='own'?'owned':'✦'+t.cost+(t.sk?' 💀'+t.sk:'')}</span></button>`;
+      });
+      h+=`</div>`;
+    });
+    const as=ascendState();
+    h+=`</div><button class="asc ${as==='own'?'own':as==='lock'?'lock':''} ${sel==='ascend'?'sel':''}" data-n="ascend">${as==='own'?'Ascended. It begins next loop.':'Ascend ✦'+ASCEND.cost+' 💀'+totalSkulls()}</button>`;
+    const n=sel==='ascend'?ASCEND:TREE.find(t=>t.id===sel);
+    let info='Tap a node to read it.',canBuy=false;
+    if(n){
+      const st=n===ASCEND?ascendState():nodeState(n);
+      info=`<strong>${esc(n.name)}</strong>. ${esc(n.desc)}`;
+      if(st==='lock'){
+        const why=[],pv=n===ASCEND?null:prevOf(n),need=n===ASCEND?totalSkulls():n.sk;
+        if(n===ASCEND&&TREE.some(t=>!t.extra&&!has(t.id)))why.push('the first three tiers of every branch');
+        if(pv&&!has(pv.id))why.push(pv.name);
+        if(S.skulls.length<need)why.push(need+' skulls');
+        info+=` <span class="sub">Locked: needs ${esc(why.join(' and '))}.</span>`;
+      }
+      if(st==='poor')info+=` <span class="sub">Needs ${n.cost} tokens.</span>`;
+      canBuy=st==='buy';
+    }
+    h+=`<div id="info">${info}</div><div class="row"><button id="tClose">Close</button><button class="go" id="tBuy" ${canBuy?'':'disabled'}>Unlock</button></div>`;
+    $('card').innerHTML=h;
+    $('card').querySelectorAll('[data-n]').forEach(el=>el.onclick=()=>{sel=el.dataset.n;render()});
+    $('tBuy').onclick=()=>{
+      const n=sel==='ascend'?ASCEND:TREE.find(t=>t.id===sel);if(!n)return;
+      const st=n===ASCEND?ascendState():nodeState(n);if(st!=='buy')return;
+      S.bank-=n.cost;
+      if(n===ASCEND)S.ascended=true;else S.owned.push(n.id);
+      if(n.id==='marrow'&&R)R.hp+=25;
+      sfx.power();save();ui();render();
+    };
+    $('tClose').onclick=()=>{
+      if(back){$('card').innerHTML=back;rebind()}else{hide();busy=wasBusy&&false}
+    };
+  };
+  $('overlay').classList.add('on');busy=true;render();
+}
+// re-attach handlers when returning from tree to a flow card
+function rebind(){
+  const g=$('oGo'),t=$('oTree');
+  if(t)t.onclick=()=>openTree(true);
+  if(g)g.onclick=()=>{hide();loadLevel()};
+}
+
+/* ---------- menu ---------- */
+function openMenu(){
+  show(`<h2>Menu</h2>
+    <p class="sub">Arrows, WASD or swipe to move. Tap a tile to step toward it. Space waits. R rewinds, F stops time, T opens the tree.</p>
+    <p>Collect tokens to spend on the tree. Bones and skulls are kept forever. Find the key, reach the portal. Loop tears run their tracks, t1, t2, t3 and on. A solid track goes out and back, one step a turn. A dashed track is fast, two steps a turn. A dotted line means it jumps from its last square back to t1. Some eras have two or three tears, and some only open on later loops. Share a square with one and it throws you into a different era. After ten eras the loop starts again, with fewer people each time.</p>
+    <div class="row" style="margin-bottom:8px"><button id="mSound">Sound: ${sound?'on':'off'}</button><button id="mData">Level data</button></div>
+    <div class="row" style="margin-bottom:8px"><button id="mStartPos">Start: ${S.fixedStart?'map P':'random'}</button></div>
+    <div class="row" style="margin-bottom:8px"><button id="mRestart">Restart this era</button><button id="mReset">Erase progress</button></div>
+    <div class="row"><button class="go" id="mClose">Back to the game</button></div>`);
+  $('mSound').onclick=()=>{sound=!sound;$('mSound').textContent='Sound: '+(sound?'on':'off')};
+  $('mStartPos').onclick=()=>{S.fixedStart=!S.fixedStart;save();$('mStartPos').textContent='Start: '+(S.fixedStart?'map P':'random')+', from the next era'};
+  $('mClose').onclick=hide;
+  $('mRestart').onclick=()=>{hide();loadLevel()};
+  $('mReset').onclick=()=>{
+    if($('mReset').dataset.c){S=fresh();save();hide();loadLevel();return}
+    $('mReset').dataset.c='1';$('mReset').textContent='Tap again to erase';
+  };
+  $('mData').onclick=openData;
+}
+function openData(){
+  show(`<h2>Level data</h2>
+    <p class="sub">Every era lives here. Start positions are random. Loop tears per era: a holes list, each with length, speed (steps a turn), every (moves every N turns), mode (bounce or loop) and fromLoop (first loop it shows up). An empty list means no holes. The older single form still works: "hole": {"length": 8} or {"off": true}. Map key: # wall, . floor, P start, E portal, K key, t token, b bone, S skull, ~ water, G ghost gate, h and v patrols, w wanderer, x hunter. Edit, paste a whole new set, then apply.</p>
+    <textarea id="dTxt" spellcheck="false"></textarea>
+    <div class="err" id="dErr"></div>
+    <div class="row"><button id="dDef">Restore default</button><button id="dCopy">Copy</button><button class="go" id="dApply">Apply and restart</button></div>
+    <div class="row" style="margin-top:8px"><button id="dClose">Close</button></div>`);
+  $('dTxt').value=JSON.stringify(LEVELS,null,1);
+  $('dClose').onclick=hide;
+  $('dDef').onclick=()=>{$('dTxt').value=JSON.stringify(DEFAULT_LEVELS,null,1)};
+  $('dCopy').onclick=()=>{const t=$('dTxt');t.select();try{navigator.clipboard.writeText(t.value)}catch(e){try{document.execCommand('copy')}catch(_){}}$('dErr').textContent='Copied.'};
+  $('dApply').onclick=()=>{
+    try{
+      const p=JSON.parse($('dTxt').value);
+      if(!Array.isArray(p)||!p.length)throw new Error('it has to be a list of at least one era');
+      p.forEach((l,k)=>{if(!Array.isArray(l.map)||!l.map.length)throw new Error('era '+(k+1)+' has no map');if(!l.map.join('').includes('P'))throw new Error('era '+(k+1)+' has no P start');if(l.holes!==undefined&&!Array.isArray(l.holes))throw new Error('era '+(k+1)+' holes must be a list, like [] or [{"length": 8}]')});
+      LEVELS=p;
+      if(JSON.stringify(p)===JSON.stringify(DEFAULT_LEVELS))lsDel(LVKEY);else lsSet(LVKEY,JSON.stringify(p));
+      S.lvl=0;save();hide();loadLevel();
+    }catch(e){$('dErr').textContent='Couldn’t apply: '+e.message+'.'}
+  };
+}
+
+/* ---------- ui ---------- */
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function say(t){$('ghost').innerHTML='<em>Ghost:</em> '+esc(t)}
+function ui(){
+  if(!R)return;
+  $('loopN').textContent=S.loop;
+  $('bonesN').textContent=S.bones.length;$('bonesT').textContent=totalBones();
+  $('skullsN').textContent=S.skulls.length;$('skullsT').textContent=totalSkulls();
+  $('bankN').textContent=S.bank;$('pendN').textContent=R.pending?' +'+R.pending:'';
+  const m=maxHP(),pct=Math.max(0,Math.min(100,R.hp/m*100));
+  $('barI').style.width=pct+'%';$('bar').classList.toggle('low',pct<30);
+  $('bar').title='Preservation '+Math.round(R.hp)+' of '+m;
+  $('lvName').textContent=R.lv.name;
+  $('lvEra').textContent=', era '+(R.i+1)+' of '+LEVELS.length;
+  $('lvBody').textContent=S.god?'Ascended':R.lv.body;
+  $('bRew').disabled=!has('rewind')||R.rewindUsed;
+  $('bFrz').disabled=!has('freeze')||R.freezeUsed;
+  $('bFrz').textContent=R.freeze>0?'Stop '+R.freeze:'Stop';
+}
+
+/* ---------- render ---------- */
+let SZ={w:300,h:300,ts:20};
+function fit(){
+  if(!R)return;
+  const st=$('stage'),aw=st.clientWidth,ah=st.clientHeight;
+  const ts=Math.max(8,Math.floor(Math.min(aw/R.w,ah/R.h)));
+  const w=ts*R.w,h=ts*R.h,dpr=window.devicePixelRatio||1;
+  cv.width=w*dpr;cv.height=h*dpr;cv.style.width=w+'px';cv.style.height=h+'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);SZ={w,h,ts};
+}
+new ResizeObserver(fit).observe($('stage'));
+
+function bfs(target){
+  const key=(x,y)=>x+','+y,prev=new Map(),q=[R.p];prev.set(key(R.p.x,R.p.y),null);
+  while(q.length){
+    const c=q.shift();
+    if(c.x===target.x&&c.y===target.y){const path=[];let k=key(c.x,c.y);while(k){path.push(k);k=prev.get(k)}return path.reverse().slice(1,-1).map(s=>s.split(',').map(Number))}
+    for(const [dx,dy] of DIRS){const nx=c.x+dx,ny=c.y+dy,k=key(nx,ny);if(prev.has(k)||!canWalk(nx,ny))continue;prev.set(k,key(c.x,c.y));q.push({x:nx,y:ny})}
+  }
+  return null;
+}
+function emoji(ch,x,y,size){ctx.font=Math.floor(size)+'px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(ch,x,y+size*.06)}
+function draw(){
+  pulse+=.04;
+  if(!R){requestAnimationFrame(draw);return}
+  const {ts}=SZ,th=R.lv.theme||{},g=R.grid;
+  const F1=th.floor||'#1a1a2a',F2=th.floor2||'#161624',W=th.wall||'#445',WA=th.water||'#246',AC=th.accent||'#fc6';
+  ctx.clearRect(0,0,SZ.w,SZ.h);
+  for(let y=0;y<R.h;y++)for(let x=0;x<R.w;x++){
+    const c=g[y][x],px=x*ts,py=y*ts;
+    ctx.fillStyle=(x+y)%2?F1:F2;ctx.fillRect(px,py,ts,ts);
+    if(c==='#'){
+      ctx.globalAlpha=S.god?.35:1;
+      ctx.fillStyle=W;ctx.fillRect(px+1,py+1,ts-2,ts-2);
+      ctx.fillStyle='rgba(255,255,255,.12)';ctx.fillRect(px+1,py+1,ts-2,Math.max(2,ts*.12));
+      ctx.globalAlpha=1;
+    }else if(c==='~'){
+      ctx.fillStyle=WA;ctx.fillRect(px,py,ts,ts);
+      ctx.strokeStyle='rgba(255,255,255,.25)';ctx.lineWidth=1;ctx.beginPath();
+      const o=Math.sin(pulse*2+x+y)*ts*.08;
+      ctx.moveTo(px+ts*.15,py+ts*.45+o);ctx.quadraticCurveTo(px+ts*.5,py+ts*.3+o,px+ts*.85,py+ts*.45+o);ctx.stroke();
+    }else if(c==='G'){
+      ctx.strokeStyle='rgba(127,214,200,'+(.45+.3*Math.sin(pulse*3+x))+')';ctx.lineWidth=2;ctx.setLineDash([3,3]);
+      ctx.strokeRect(px+3,py+3,ts-6,ts-6);ctx.setLineDash([]);
+      ctx.fillStyle='rgba(127,214,200,.12)';ctx.fillRect(px+3,py+3,ts-6,ts-6);
+    }
+  }
+  // echoes of the people who are gone
+  R.echoes.forEach(e=>{ctx.fillStyle='rgba(255,255,255,.07)';ctx.beginPath();ctx.arc(e.x*ts+ts/2,e.y*ts+ts/2,ts*.3,0,7);ctx.fill()});
+  // whisper path
+  if((has('whisper')||S.god)&&!busy){
+    const path=bfs(R.key?R.exit:R.keyPos);
+    if(path){ctx.fillStyle='rgba(127,214,200,.55)';path.forEach(([x,y],k)=>{const r=ts*(.07+.03*Math.sin(pulse*4-k*.5));ctx.beginPath();ctx.arc(x*ts+ts/2,y*ts+ts/2,Math.max(1.5,r),0,7);ctx.fill()})}
+  }
+  // portal
+  const ex=R.exit.x*ts+ts/2,ey=R.exit.y*ts+ts/2;
+  ctx.save();ctx.translate(ex,ey);
+  if(R.key){
+    ctx.rotate(pulse);ctx.strokeStyle='#7fd6c8';ctx.lineWidth=2.5;ctx.fillStyle='rgba(127,214,200,.3)';
+    ctx.beginPath();for(let k=0;k<6;k++){const a=k*Math.PI/3,r=ts*.42;k?ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r):ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r)}
+    ctx.closePath();ctx.fill();ctx.stroke();ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(0,0,ts*.12,0,7);ctx.fill();
+  }else{
+    ctx.strokeStyle='rgba(255,255,255,.45)';ctx.lineWidth=2;ctx.strokeRect(-ts*.32,-ts*.32,ts*.64,ts*.64);
+    ctx.fillStyle='rgba(255,255,255,.45)';ctx.fillRect(-ts*.08,-ts*.08,ts*.16,ts*.16);
+  }
+  ctx.restore();
+  // key
+  if(!R.key){
+    const kx=R.keyPos.x*ts+ts/2,ky=R.keyPos.y*ts+ts/2,ph=(pulse*.8)%1;
+    // expanding beacon ring so the key can be spotted from across the map
+    ctx.strokeStyle='rgba(255,214,90,'+(1-ph)*.9+')';ctx.lineWidth=2.5;
+    ctx.beginPath();ctx.arc(kx,ky,ts*(.45+ph*1.1),0,7);ctx.stroke();
+    ctx.fillStyle='#ffd65a';ctx.beginPath();ctx.arc(kx,ky,ts*.44,0,7);ctx.fill();
+    ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.beginPath();ctx.arc(kx,ky,ts*.44,0,7);ctx.stroke();
+    emoji('🔑',kx,ky+Math.sin(pulse*3)*ts*.05,ts*.6);
+  }
+  // items
+  R.items.forEach(it=>{
+    const cx=it.x*ts+ts/2,cy=it.y*ts+ts/2;
+    if(it.t==='t'){
+      if(R.picked.includes(it.id))return;
+      const r=ts*(.22+.03*Math.sin(pulse*4+it.x));
+      ctx.fillStyle=AC;ctx.beginPath();
+      for(let k=0;k<6;k++){const a=k*Math.PI/3+Math.PI/6;k?ctx.lineTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r):ctx.moveTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r)}
+      ctx.closePath();ctx.fill();ctx.fillStyle='rgba(0,0,0,.35)';ctx.beginPath();ctx.arc(cx,cy,r*.35,0,7);ctx.fill();
+    }else if(it.t==='b'){if(!S.bones.includes(it.id))emoji('🦴',cx,cy,ts*.6)}
+    else if(it.t==='S'){if(!S.skulls.includes(it.id)){ctx.fillStyle='rgba(255,224,138,'+(.18+.12*Math.sin(pulse*3))+')';ctx.beginPath();ctx.arc(cx,cy,ts*.46,0,7);ctx.fill();emoji('💀',cx,cy,ts*.62)}}
+  });
+  // time holes: tracks, then the holes themselves
+  const HC=['190,150,255','255,143,200','143,200,255'];
+  const fs=Math.max(8,Math.floor(ts*.3));
+  const C=p=>[p.x*ts+ts/2,p.y*ts+ts/2];
+  R.holes.forEach((H,n)=>{
+    const col=HC[n%HC.length];
+    ctx.strokeStyle='rgba('+col+',.25)';ctx.lineWidth=Math.max(1,ts*.07);
+    ctx.setLineDash(H.speed>1?[ts*.16,ts*.12]:[]);
+    ctx.beginPath();H.path.forEach((p,k)=>{const [x,y]=C(p);k?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.stroke();
+    if(H.mode==='loop'){const [ax,ay]=C(H.path[H.path.length-1]),[bx,by]=C(H.path[0]);ctx.setLineDash([2,5]);ctx.lineWidth=1;ctx.strokeStyle='rgba('+col+',.5)';ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke()}
+    ctx.setLineDash([]);
+    ctx.font='600 '+fs+'px "Chakra Petch",sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    H.path.forEach((p,k)=>{
+      if(k===H.i)return;
+      const [cx,cy]=C(p);
+      ctx.fillStyle='rgba(10,8,20,.55)';ctx.beginPath();ctx.arc(cx,cy,ts*.3,0,7);ctx.fill();
+      ctx.strokeStyle='rgba('+col+',.45)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(cx,cy,ts*.3,0,7);ctx.stroke();
+      ctx.fillStyle='rgba('+col+',.9)';ctx.fillText('t'+(k+1),cx,cy);
+    });
+  });
+  R.holes.forEach((H,n)=>{
+    const col=HC[n%HC.length],[cx,cy]=C(H.path[H.i]);
+    const spin=H.speed>1?2:(H.every>1?.5:1);
+    ctx.fillStyle='#05030a';ctx.beginPath();ctx.arc(cx,cy,ts*.4,0,7);ctx.fill();
+    for(let k=0;k<3;k++){ctx.strokeStyle='rgba('+col+','+(.9-k*.22)+')';ctx.lineWidth=2;ctx.beginPath();
+      const a=pulse*(2+k)*spin+k;ctx.arc(cx,cy,ts*(.2+k*.08),a,a+4.2);ctx.stroke()}
+    ctx.font='600 '+fs+'px "Chakra Petch",sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillStyle='rgba(245,236,255,.97)';ctx.fillText('t'+(H.i+1),cx,cy);
+    if(has('tearsight')&&!busy){
+      nextSquares(H,2).forEach((q,k)=>{const [qx,qy]=C(q);ctx.strokeStyle='rgba('+col+','+(k?.5:.95)+')';ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(qx,qy,ts*.42,0,7);ctx.stroke()});
+      const lab='→'+(H.dest+1);ctx.font='700 '+fs+'px "Chakra Petch",sans-serif';
+      const lw=ctx.measureText(lab).width+6,ly=Math.max(fs*.7,cy-ts*.62);
+      ctx.fillStyle='rgba('+col+',.95)';ctx.fillRect(cx-lw/2,ly-fs*.6,lw,fs*1.2);
+      ctx.fillStyle='#120c1e';ctx.fillText(lab,cx,ly);
+    }
+  });
+  // crowds
+  R.crowds.forEach(c=>{
+    const cx=c.x*ts+ts/2,cy=c.y*ts+ts/2;
+    if(has('sight')&&c.next&&R.freeze===0){ctx.strokeStyle='rgba(236,138,82,.7)';ctx.lineWidth=1.5;ctx.setLineDash([2,2]);ctx.strokeRect(c.next.x*ts+3,c.next.y*ts+3,ts-6,ts-6);ctx.setLineDash([])}
+    ctx.fillStyle=R.freeze>0?'rgba(127,214,200,.28)':(c.type==='x'?'rgba(236,90,60,.35)':'rgba(236,138,82,.22)');
+    ctx.beginPath();ctx.arc(cx,cy,ts*.44,0,7);ctx.fill();
+    emoji(c.type==='x'&&R.lv.hunter?R.lv.hunter:(R.lv.crowd||'🚶'),cx,cy,ts*.62);
+  });
+  // player
+  const px=R.p.x*ts+ts/2,py=R.p.y*ts+ts/2;
+  ctx.fillStyle=S.god?'rgba(240,199,106,.4)':'rgba(127,214,200,.28)';ctx.beginPath();ctx.arc(px,py,ts*.46,0,7);ctx.fill();
+  emoji(S.god?'👑':(R.lv.icon||'🧍'),px,py,ts*.66);
+  const ga=pulse*2.4,gx=px+Math.cos(ga)*ts*.44,gy=py+Math.sin(ga)*ts*.44;
+  ctx.fillStyle='#7fd6c8';ctx.beginPath();ctx.arc(gx,gy,Math.max(2,ts*.09),0,7);ctx.fill();
+  ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(gx,gy,Math.max(1,ts*.035),0,7);ctx.fill();
+  if(R.flash>0){ctx.fillStyle='rgba(236,90,60,'+(R.flash*.35)+')';ctx.fillRect(0,0,SZ.w,SZ.h);R.flash=Math.max(0,R.flash-.06)}
+  requestAnimationFrame(draw);
+}
+
+/* ---------- input ---------- */
+const D={u:[0,-1],dn:[0,1],l:[-1,0],r:[1,0]};
+document.querySelectorAll('.pad button').forEach(b=>{
+  let t1=null,t2=null;
+  const stop=()=>{clearTimeout(t1);clearInterval(t2);t1=t2=null};
+  b.addEventListener('pointerdown',e=>{e.preventDefault();const d=D[b.dataset.d];step(d[0],d[1]);stop();
+    t1=setTimeout(()=>{t2=setInterval(()=>step(d[0],d[1]),140)},320)});
+  ['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,stop));
+  b.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();const d=D[b.dataset.d];step(d[0],d[1])}});
+});
+$('bWait').onclick=()=>step(0,0);
+$('bRew').onclick=doRewind;
+$('bFrz').onclick=doFreeze;
+$('bTree').onclick=()=>{if(!busy)openTree(false)};
+$('bMenu').onclick=()=>{if(!busy)openMenu()};
+window.addEventListener('keydown',e=>{
+  if($('overlay').classList.contains('on'))return;
+  const k=e.key.toLowerCase();
+  const m={arrowup:'u',w:'u',arrowdown:'dn',s:'dn',arrowleft:'l',a:'l',arrowright:'r',d:'r'}[k];
+  if(m){e.preventDefault();step(...D[m])}
+  else if(k===' '){e.preventDefault();step(0,0)}
+  else if(k==='r')doRewind();
+  else if(k==='f')doFreeze();
+  else if(k==='t')openTree(false);
+});
+let sw=null;
+cv.addEventListener('pointerdown',e=>{sw={x:e.clientX,y:e.clientY}});
+cv.addEventListener('pointerup',e=>{
+  if(!sw||!R)return;
+  const dx=e.clientX-sw.x,dy=e.clientY-sw.y;sw=null;
+  if(Math.hypot(dx,dy)>22){Math.abs(dx)>Math.abs(dy)?step(Math.sign(dx),0):step(0,Math.sign(dy));return}
+  const r=cv.getBoundingClientRect(),tx=Math.floor((e.clientX-r.left)/SZ.ts),ty=Math.floor((e.clientY-r.top)/SZ.ts);
+  const ddx=tx-R.p.x,ddy=ty-R.p.y;
+  if(!ddx&&!ddy){step(0,0);return}
+  if(Math.abs(ddx)>=Math.abs(ddy)){if(canWalk(R.p.x+Math.sign(ddx),R.p.y)||!ddy)step(Math.sign(ddx),0);else step(0,Math.sign(ddy))}
+  else{if(canWalk(R.p.x,R.p.y+Math.sign(ddy))||!ddx)step(0,Math.sign(ddy));else step(Math.sign(ddx),0)}
+});
+
+/* ---------- start ---------- */
+loadLevel();
+if(S.loop===1&&S.lvl===0&&S.steps===0){
+  show(`<h2 class="big">they’re all gone</h2>
+    <p>He falls from orbit with an AI ghost wired behind his eye. Ten eras, Primordia to deep time. In each one: find the key, reach the portal, and keep as much of himself as he can.</p>
+    <p class="sub">Tokens buy the tree. Bones and skulls are never lost. When the tenth era ends, the loop starts over, and fewer people come back each time. Watch for loop tears: each runs t1, t2, t3 and on, and if one lands on you, you’re somewhere else.</p>
+    <div class="row"><button class="go" id="oStart">Fall to Earth</button></div>`);
+  $('oStart').onclick=()=>{hide();tone(400,800,.2)};
+}
+requestAnimationFrame(draw);
+})();
+</script>
+</body>
+</html>
